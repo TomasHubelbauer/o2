@@ -3,6 +3,7 @@ const fetch = require('node-fetch');
 const fs = require('fs-extra');
 const email = require('../self-email');
 const headers = require('../self-email/headers');
+const footer = require('../self-email/footer');
 
 module.exports = async function () {
   // Enable TLS1 to be able to fetch O2 Arena's shitty-ass website
@@ -35,12 +36,11 @@ module.exports = async function () {
     for (const id of Object.keys(events)) {
       if (!storedEvents[id]) {
         await email(
-          headers(request.name, `${events[id].title} in ${request.name}`),
+          headers(`${events[id].title} in ${request.name}`, request.name),
           `<a href="${events[id].link}">${events[id].title}</a>`,
           '<br />',
           `<img src="${events[id].imageLink}" />`,
-          '<br />',
-          'Thank you'
+          ...footer(request.name)
         );
 
         console.log(`Notified about ${events[id].title}`);
