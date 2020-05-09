@@ -1,6 +1,7 @@
 const tls = require('tls');
 const fetch = require('node-fetch');
 const fs = require('fs-extra');
+const path = require('path');
 const email = require('../self-email');
 const { eml, subject, sender, recipient } = require('../self-email');
 
@@ -13,6 +14,7 @@ module.exports = async function () {
     { url: 'http://o2universum.cz/en/events/', name: 'o2-universum' },
   ];
 
+  let newEvents = 0;
   for (const request of requests) {
     const response = await fetch(request.url);
     const text = await response.text();
@@ -24,9 +26,10 @@ module.exports = async function () {
       events[event.id] = event;
     }
 
+    const venueJsonFilePath = path.join(__dirname, request.name + '.json');
     let storedEvents = [];
     try {
-      storedEvents = await fs.readJson(request.name + '.json');
+      storedEvents = await fs.readJson(venueJsonFilePath);
     }
     catch (error) {
       // Ignore missing file - first run experience
@@ -45,6 +48,7 @@ module.exports = async function () {
           )
         );
 
+        newEvents++;
         console.log(`Notified about ${events[id].title}`);
       }
       else {
@@ -52,8 +56,12 @@ module.exports = async function () {
       }
     }
 
-    await fs.writeJson(request.name + '.json', events, { spaces: 2 });
+    await fs.writeJson(venueJsonFilePath, events, { spaces: 2 });
   }
+
+  return `${newEvents} new events`;
 };
 
-module.exports = module.exports();
+if (process.cwd() === __dirname) {
+  module.exports();
+}
